@@ -87,7 +87,7 @@ def generator_fn(sents1, sents2, vocab_fpath):
         decoder_input, y = y[:-1], y[1:]
 
         x_seqlen, y_seqlen = len(x), len(y)
-        yield (x, x_seqlen, sent1), (decoder_input, y, y_seqlen, sent2)
+        yield (x, x_seqlen), (decoder_input, y, y_seqlen)
 
 def input_fn(sents1, sents2, vocab_fpath, batch_size, shuffle=False):
     '''Batchify data
@@ -108,12 +108,18 @@ def input_fn(sents1, sents2, vocab_fpath, batch_size, shuffle=False):
         y_seqlen: int32 tensor. (N, )
         sents2: str tensor. (N,)
     '''
-    shapes = (([None], (), ()),
-              ([None], [None], (), ()))
-    types = ((tf.int32, tf.int32, tf.string),
-             (tf.int32, tf.int32, tf.int32, tf.string))
-    paddings = ((0, 0, ''),
-                (0, 0, 0, ''))
+    # shapes = (([None], (), ()),
+    #           ([None], [None], (), ()))
+    # types = ((tf.int32, tf.int32, tf.string),
+    #          (tf.int32, tf.int32, tf.int32, tf.string))
+    # paddings = ((0, 0, ''),
+    #             (0, 0, 0, ''))
+    shapes = (([None], ()),
+              ([None], [None], ()))
+    types = ((tf.int32, tf.int32),
+             (tf.int32, tf.int32, tf.int32))
+    paddings = ((0, 0),
+                (0, 0, 0))
 
     dataset = tf.data.Dataset.from_generator(
         generator_fn,

@@ -22,12 +22,18 @@ def prepro(hp):
     hp: hyperparams. argparse.
     """
     logging.info("# Check if raw files exist")
-    train1 = "iwslt2016/de-en/train.tags.de-en.de"
-    train2 = "iwslt2016/de-en/train.tags.de-en.en"
-    eval1 = "iwslt2016/de-en/IWSLT16.TED.tst2013.de-en.de.xml"
-    eval2 = "iwslt2016/de-en/IWSLT16.TED.tst2013.de-en.en.xml"
-    test1 = "iwslt2016/de-en/IWSLT16.TED.tst2014.de-en.de.xml"
-    test2 = "iwslt2016/de-en/IWSLT16.TED.tst2014.de-en.en.xml"
+    # train1 = "iwslt2016/de-en/train.tags.de-en.de"
+    # train2 = "iwslt2016/de-en/train.tags.de-en.en"
+    # eval1 = "iwslt2016/de-en/IWSLT16.TED.tst2013.de-en.de.xml"
+    # eval2 = "iwslt2016/de-en/IWSLT16.TED.tst2013.de-en.en.xml"
+    # test1 = "iwslt2016/de-en/IWSLT16.TED.tst2014.de-en.de.xml"
+    # test2 = "iwslt2016/de-en/IWSLT16.TED.tst2014.de-en.en.xml"
+    train1 = "iwslt2016/ch-ch/train.ch"
+    train2 = "iwslt2016/ch-ch/train.ch"
+    eval1 = "iwslt2016/ch-ch/tst2018.ch"
+    eval2 = "iwslt2016/ch-ch/tst2018.ch"
+    test1 = "iwslt2016/ch-ch/tst2019.ch"
+    test2 = "iwslt2016/ch-ch/tst2019.ch"
     for f in (train1, train2, eval1, eval2, test1, test2):
         if not os.path.isfile(f):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f)
@@ -40,9 +46,9 @@ def prepro(hp):
     assert len(prepro_train1)==len(prepro_train2), "Check if train source and target files match."
 
     # eval
-    _prepro = lambda x: [re.sub("<[^>]+>", "", line).strip() \
-                     for line in open(x, 'r').read().split("\n") \
-                     if line.startswith("<seg id")]
+    #_prepro = lambda x: [re.sub("<[^>]+>", "", line).strip() \
+    #                 for line in open(x, 'r').read().split("\n") \
+    #                 if line.startswith("<seg id")]
     prepro_eval1, prepro_eval2 = _prepro(eval1), _prepro(eval2)
     assert len(prepro_eval1) == len(prepro_eval2), "Check if eval source and target files match."
 

@@ -41,7 +41,7 @@ class Transformer:
         memory: encoder outputs. (N, T1, d_model)
         '''
         with tf.variable_scope("encoder", reuse=tf.AUTO_REUSE):
-            x, seqlens, sents1 = xs
+            x, seqlens = xs
 
             # src_masks
             src_masks = tf.math.equal(x, 0) # (N, T1)
@@ -68,7 +68,7 @@ class Transformer:
                     # feed forward
                     enc = ff(enc, num_units=[self.hp.d_ff, self.hp.d_model])
         memory = enc
-        return memory, sents1, src_masks
+        return memory, src_masks
 
     def decode(self, ys, memory, src_masks, training=True):
         '''
@@ -82,7 +82,7 @@ class Transformer:
         sents2: (N,). string.
         '''
         with tf.variable_scope("decoder", reuse=tf.AUTO_REUSE):
-            decoder_inputs, y, seqlens, sents2 = ys
+            decoder_inputs, y, seqlens = ys
 
             # tgt_masks
             tgt_masks = tf.math.equal(decoder_inputs, 0)  # (N, T2)
@@ -126,7 +126,7 @@ class Transformer:
         logits = tf.einsum('ntd,dk->ntk', dec, weights) # (N, T2, vocab_size)
         y_hat = tf.to_int32(tf.argmax(logits, axis=-1))
 
-        return logits, y_hat, y, sents2
+        return logits, y_hat, y
 
     def train(self, xs, ys):
         '''
@@ -137,8 +137,8 @@ class Transformer:
         summaries: training summary node
         '''
         # forward
-        memory, sents1, src_masks = self.encode(xs)
-        logits, preds, y, sents2 = self.decode(ys, memory, src_masks)
+        memory, src_masks = self.encode(xs)
+        logits, preds, y = self.decode(ys, memory, src_masks)
 
         # train scheme
         y_ = label_smoothing(tf.one_hot(y, depth=self.hp.vocab_size))
@@ -165,30 +165,26 @@ class Transformer:
         Returns
         y_hat: (N, T2)
         '''
-        decoder_inputs, y, y_seqlen, sents2 = ys
+        decoder_inputs, y, y_seqlen = ys
 
         decoder_inputs = tf.ones((tf.shape(xs[0])[0], 1), tf.int32) * self.token2idx["<s>"]
-        ys = (decoder_inputs, y, y_seqlen, sents2)
+        ys = (decoder_inputs, y, y_seqlen)
 
-        memory, sents1, src_masks = self.encode(xs, False)
+        memory, src_masks = self.encode(xs, False)
 
         logging.info("Inference graph is being built. Please be patient.")
         for _ in tqdm(range(self.hp.maxlen2)):
-            logits, y_hat, y, sents2 = self.decode(ys, memory, src_masks, False)
+            logits, y_hat, y = self.decode(ys, memory, src_masks, False)
             if tf.reduce_sum(y_hat, 1) == self.token2idx["<pad>"]: break
 
             _decoder_inputs = tf.concat((decoder_inputs, y_hat), 1)
-            ys = (_decoder_inputs, y, y_seqlen, sents2)
+            ys = (_decoder_inputs, y, y_seqlen)
 
         # monitor a random sample
         n = tf.random_uniform((), 0, tf.shape(y_hat)[0]-1, tf.int32)
-        sent1 = sents1[n]
         pred = convert_idx_to_token_tensor(y_hat[n], self.idx2token)
-        sent2 = sents2[n]
 
-        tf.summary.text("sent1", sent1)
         tf.summary.text("pred", pred)
-        tf.summary.text("sent2", sent2)
         summaries = tf.summary.merge_all()
 
         return y_hat, summaries

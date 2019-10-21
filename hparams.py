@@ -4,7 +4,7 @@ class Hparams:
     parser = argparse.ArgumentParser()
 
     # prepro
-    parser.add_argument('--vocab_size', default=32000, type=int)
+    parser.add_argument('--vocab_size', default=1200, type=int)
 
     # train
     ## files
